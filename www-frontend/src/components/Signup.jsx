@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Formik, Form, Field } from 'formik';
+import { View, StyleSheet } from 'react-native';
+import { Button, TextInput, Snackbar, Title } from 'react-native-paper';
+import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { TextField, Button, Box, Container, Typography } from '@mui/material';
-import useAxios from 'axios-hooks';
 import axios from 'axios';
 import qs from 'qs';
-import { useNavigate } from 'react-router-dom';
 
 // Validación del formulario con Yup
 const validationSchema = Yup.object({
@@ -26,157 +25,112 @@ const initialValues = {
   password_confirmation: '',
 };
 
-// Configuración de axios con axios-hooks
-axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
+const Signup = ({ navigation }) => {
+  const [serverError, setServerError] = useState(false); // Estado para manejar el error del servidor
 
-const Signup = () => {
-  const [serverError, setServerError] = useState(''); // Estado para manejar el error del servidor
-  const navigate = useNavigate(); // Hook para manejar la navegación
-
-  // Definir el hook para la petición POST
-  const [{ data, loading, error }, executePost] = useAxios(
-    {
-      url: 'http://localhost:3001/api/v1/signup',
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    },
-    { manual: true } // No ejecutar automáticamente, lo haremos manualmente al enviar el formulario
-  );
-
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values) => {
     try {
-      await executePost({ data: qs.stringify({ user: values }) });
-      setServerError(''); // Limpia el mensaje de error si el registro es exitoso
-      navigate('/login'); // Redirige a la página de login después de un registro exitoso
+      await axios.post('http://181.43.126.211:3001/api/v1/signup', qs.stringify({ user: values }), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+      setServerError(false); // Limpia el mensaje de error si el registro es exitoso
+      navigation.navigate('Login'); // Redirige a la página de login después de un registro exitoso
     } catch (err) {
-      setServerError('Server Error. Try again later');
+      setServerError(true);
       console.error('Error when sending the form:', err);
-    } finally {
-      setSubmitting(false);
     }
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          width: '100%',
-          mt: 2,
-        }}
+    <View style={styles.container}>
+      <Title>Create Account</Title>
+      <Formik
+        initialValues={initialValues}
+        validationSchema={validationSchema}
+        onSubmit={handleSubmit}
       >
-        <Typography component="h1" variant="h5">
-          Create Account
-        </Typography>
-        <Formik
-          initialValues={initialValues}
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ isSubmitting, errors, touched }) => (
-            <Form style={{ width: '100%' }}>
-              <Box sx={{ mt: 2 }}>
-                <Field
-                  as={TextField}
-                  fullWidth
-                  variant="outlined"
-                  label="First Name"
-                  name="first_name"
-                  type="text"
-                  error={touched.first_name && Boolean(errors.first_name)}
-                  helperText={touched.first_name && errors.first_name}
-                  margin="normal"
-                />
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Field
-                  as={TextField}
-                  fullWidth
-                  variant="outlined"
-                  label="Last Name"
-                  name="last_name"
-                  type="text"
-                  error={touched.last_name && Boolean(errors.last_name)}
-                  helperText={touched.last_name && errors.last_name}
-                  margin="normal"
-                />
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Field
-                  as={TextField}
-                  fullWidth
-                  variant="outlined"
-                  label="Email"
-                  name="email"
-                  type="email"
-                  error={touched.email && Boolean(errors.email)}
-                  helperText={touched.email && errors.email}
-                  margin="normal"
-                />
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Field
-                  as={TextField}
-                  fullWidth
-                  variant="outlined"
-                  label="Handle"
-                  name="handle"
-                  type="text"
-                  error={touched.handle && Boolean(errors.handle)}
-                  helperText={touched.handle && errors.handle}
-                  margin="normal"
-                />
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Field
-                  as={TextField}
-                  fullWidth
-                  variant="outlined"
-                  label="Password"
-                  name="password"
-                  type="password"
-                  error={touched.password && Boolean(errors.password)}
-                  helperText={touched.password && errors.password}
-                  margin="normal"
-                />
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Field
-                  as={TextField}
-                  fullWidth
-                  variant="outlined"
-                  label="Confirm Password"
-                  name="password_confirmation"
-                  type="password"
-                  error={touched.password_confirmation && Boolean(errors.password_confirmation)}
-                  helperText={touched.password_confirmation && errors.password_confirmation}
-                  margin="normal"
-                />
-              </Box>
-              <Box sx={{ mt: 3 }}>
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  color="primary"
-                  disabled={isSubmitting || loading}
-                >
-                  {loading ? 'Sending...' : 'Create Account'}
-                </Button>
-              </Box>
-              {serverError && (
-                <Typography color="error" variant="body2" align="center" sx={{ mt: 2 }}>
-                  {serverError}
-                </Typography>
-              )}
-            </Form>
-          )}
-        </Formik>
-      </Box>
-    </Container>
+        {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+          <>
+            <TextInput
+              label="First Name"
+              onChangeText={handleChange('first_name')}
+              onBlur={handleBlur('first_name')}
+              value={values.first_name}
+              error={touched.first_name && Boolean(errors.first_name)}
+              style={styles.input}
+            />
+            <TextInput
+              label="Last Name"
+              onChangeText={handleChange('last_name')}
+              onBlur={handleBlur('last_name')}
+              value={values.last_name}
+              error={touched.last_name && Boolean(errors.last_name)}
+              style={styles.input}
+            />
+            <TextInput
+              label="Email"
+              onChangeText={handleChange('email')}
+              onBlur={handleBlur('email')}
+              value={values.email}
+              error={touched.email && Boolean(errors.email)}
+              style={styles.input}
+              keyboardType="email-address"
+            />
+            <TextInput
+              label="Handle"
+              onChangeText={handleChange('handle')}
+              onBlur={handleBlur('handle')}
+              value={values.handle}
+              error={touched.handle && Boolean(errors.handle)}
+              style={styles.input}
+            />
+            <TextInput
+              label="Password"
+              onChangeText={handleChange('password')}
+              onBlur={handleBlur('password')}
+              value={values.password}
+              error={touched.password && Boolean(errors.password)}
+              style={styles.input}
+              secureTextEntry
+            />
+            <TextInput
+              label="Confirm Password"
+              onChangeText={handleChange('password_confirmation')}
+              onBlur={handleBlur('password_confirmation')}
+              value={values.password_confirmation}
+              error={touched.password_confirmation && Boolean(errors.password_confirmation)}
+              style={styles.input}
+              secureTextEntry
+            />
+            <Button mode="contained" onPress={handleSubmit} style={styles.button}>
+              Create Account
+            </Button>
+            <Snackbar
+              visible={serverError}
+              onDismiss={() => setServerError(false)}
+              duration={3000}
+            >
+              Server Error. Try again later
+            </Snackbar>
+          </>
+        )}
+      </Formik>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  input: {
+    marginBottom: 16,
+  },
+  button: {
+    marginTop: 16,
+  },
+});
 
 export default Signup;

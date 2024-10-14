@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { Formik, Form, Field } from 'formik';
+import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { TextField, Button, Box, Container, Typography } from '@mui/material';
-import useAxios from 'axios-hooks';
 import axios from 'axios';
-import qs from 'qs';
-import { useNavigate } from 'react-router-dom';
 
 // Validation schema with Yup
 const validationSchema = Yup.object({
   email: Yup.string().email('Invalid Email').required('Email is Required'),
-  password: Yup.string().required('Password is Required').min(6, 'Password must be 6 characters or longer'),
+  password: Yup.string().required('Password is Required').min(6, 'Password must be at least 6 characters long'),
 });
 
 // Initial form values
@@ -19,34 +16,23 @@ const initialValues = {
   password: '',
 };
 
-// Configure axios
-axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
-
-const Login = ({ tokenHandler }) => {
+const Login = ({ tokenHandler, navigation }) => {
   const [serverError, setServerError] = useState('');
-  const navigate = useNavigate();
 
-  // Define the axios hook for the POST request
-  const [{ data, loading, error }, executePost] = useAxios(
-    {
-      url: 'http://localhost:3001/api/v1/login',
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    },
-    { manual: true }
-  );
-
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values) => {
     try {
-      const response = await executePost({ data: qs.stringify({ user: values }) });
-      console.log("Response: ", response);
+      const response = await axios.post('http://181.43.126.211:3001/api/v1/login', {
+        user: values,
+      }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
 
       const receivedToken = response.headers.authorization.split(' ')[1];
 
       if (receivedToken) {
         tokenHandler(receivedToken);
         setServerError(''); // Clear the error message
-        navigate('/'); // Redirect after successful login
+        navigation.navigate('Home'); // Redirect to Home after successful login
       } else {
         setServerError('No token received. Please try again.');
       }
@@ -57,63 +43,85 @@ const Login = ({ tokenHandler }) => {
       } else {
         setServerError('Error en el servidor. Intenta nuevamente más tarde.');
       }
-    } finally {
-      setSubmitting(false);
     }
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', mt: 8 }}>
-        <Typography component="h1" variant="h5">Log In</Typography>
-        <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
-          {({ isSubmitting, errors, touched }) => (
-            <Form style={{ width: '100%' }}>
-              <Box sx={{ mt: 2 }}>
-                <Field as={TextField}
-                  fullWidth
-                  variant="outlined"
-                  label="Email"
-                  name="email"
-                  type="email"
-                  error={touched.email && Boolean(errors.email)}
-                  helperText={touched.email && errors.email}
-                  margin="normal"
-                />
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Field as={TextField}
-                  fullWidth
-                  variant="outlined"
-                  label="Password"
-                  name="password"
-                  type="password"
-                  error={touched.password && Boolean(errors.password)}
-                  helperText={touched.password && errors.password}
-                  margin="normal"
-                />
-              </Box>
-              <Box sx={{ mt: 3 }}>
-                <Button type="submit" fullWidth variant="contained" color="primary" disabled={isSubmitting || loading}>
-                  {loading ? 'Starting...' : 'Log In'}
-                </Button>
-              </Box>
-              {serverError && (
-                <Typography color="error" variant="body2" align="center" sx={{ mt: 2 }}>
-                  {serverError}
-                </Typography>
-              )}
-              <Box sx={{ mt: 3, textAlign: 'center' }}>
-                <Button variant="text" onClick={() => navigate('/signup')}>
-                  Don't have an account? Sign Up here
-                </Button>
-              </Box>
-            </Form>
-          )}
-        </Formik>
-      </Box>
-    </Container>
+    <View style={styles.container}>
+      <Text style={styles.title}>Log In</Text>
+      <Formik
+        initialValues={initialValues}
+        validationSchema={validationSchema}
+        onSubmit={handleSubmit}
+      >
+        {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              onChangeText={handleChange('email')}
+              onBlur={handleBlur('email')}
+              value={values.email}
+            />
+            {touched.email && errors.email && (
+              <Text style={styles.error}>{errors.email}</Text>
+            )}
+
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              secureTextEntry
+              onChangeText={handleChange('password')}
+              onBlur={handleBlur('password')}
+              value={values.password}
+            />
+            {touched.password && errors.password && (
+              <Text style={styles.error}>{errors.password}</Text>
+            )}
+
+            <Button title="Log In" onPress={handleSubmit} />
+            {serverError ? (
+              <Text style={styles.error}>{serverError}</Text>
+            ) : null}
+
+            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+              <Text style={styles.signupLink}>Don't have an account? Sign Up here</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </Formik>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  error: {
+    color: 'red',
+    marginBottom: 10,
+  },
+  signupLink: {
+    marginTop: 15,
+    color: 'blue',
+    textAlign: 'center',
+  },
+});
 
 export default Login;

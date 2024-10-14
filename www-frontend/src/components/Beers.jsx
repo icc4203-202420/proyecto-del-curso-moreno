@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { TextField, Grid, IconButton, List, ListItem, ListItemText, CircularProgress, Card, CardContent, Typography, CardActions, Button } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import { useNavigate } from 'react-router-dom';
+import { View, Text, TextInput, Button, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons'; // Import vector icons
 
-const BeerList = () => {
+const BeerList = ({ navigation }) => {
   const [beers, setBeers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredBeers, setFilteredBeers] = useState([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchBeers = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('http://localhost:3001/api/v1/beers');
+        const response = await axios.get('http://181.43.126.211:3001/api/v1/beers');
         setBeers(response.data.beers);
         setFilteredBeers(response.data.beers);
       } catch (error) {
@@ -36,75 +34,118 @@ const BeerList = () => {
   };
 
   const handleViewDetails = (id) => {
-    navigate(`/beers/${id}`);
+    navigation.navigate('BeerDetails', { beerId: id });
   };
 
   const handleRateBeer = (id) => {
-    navigate(`/beers/${id}/review`);
-  };  
+    navigation.navigate('BeerReview', { beerId: id });
+  };
+
+  const renderBeerItem = ({ item }) => (
+    <View style={styles.card}>
+      <Text style={styles.beerName}>{item.name}</Text>
+      <Text style={styles.brewery}>Brewery: {item.brewery}</Text>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={() => handleViewDetails(item.id)}>
+          <Text style={styles.buttonText}>View Details</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, styles.rateButton]} onPress={() => handleRateBeer(item.id)}>
+          <Text style={styles.buttonText}>Rate</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
-    <div>
-      <Grid container justifyContent="center">
-        <h2>Beer List</h2>
-      </Grid>
-
-
-      <Grid container justifyContent="center" alignItems="center" style={{ marginBottom: '20px' }}>
-        <TextField
-          label="Search Beers"
-          variant="outlined"
+    <View style={styles.container}>
+      <Text style={styles.title}>Beer List</Text>
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search Beers"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ marginRight: '10px' }}
+          onChangeText={(text) => setSearchTerm(text)}
         />
-        <IconButton onClick={handleSearch}>
-          <SearchIcon style={{ color: 'black' }} />
-        </IconButton>
-      </Grid>
+        <TouchableOpacity onPress={handleSearch}>
+          <Icon name="search" size={24} color="black" />
+        </TouchableOpacity>
+      </View>
 
       {loading ? (
-        <CircularProgress />
+        <ActivityIndicator size="large" color="#0000ff" />
       ) : (
-        <Grid container spacing={2}>
-          {filteredBeers.length > 0 ? (
-            filteredBeers.map((beer) => (
-              <Grid item xs={12} sm={6} md={4} key={beer.id}>
-                <Card style={{ backgroundColor: '#A36717' }}>
-                  <CardContent>
-                    <Typography variant="h6" style={{ color: '#FFF' }}>
-                      {beer.name}
-                    </Typography>
-                    <Typography color="textSecondary" style={{ color: '#FFF' }}>
-                      Brewery: {beer.brewery}
-                    </Typography>
-                  </CardContent>
-                  <CardActions>
-                    <Button
-                      size="small"
-                      style={{ backgroundColor: '#F59A23', color: '#FFF' }}
-                      onClick={() => handleViewDetails(beer.id)}
-                    >
-                      View Details
-                    </Button>
-                    <Button
-                      size="small"
-                      style={{ backgroundColor: '#F59A23', color: '#FFF', marginLeft: '10px' }}
-                      onClick={() => handleRateBeer(beer.id)}
-                    >
-                      Rate
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))
-          ) : (
-            <p>No beers found.</p>
-          )}
-        </Grid>
+        <FlatList
+          data={filteredBeers}
+          renderItem={renderBeerItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+        />
       )}
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  searchInput: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 8,
+    flex: 1,
+    marginRight: 8,
+  },
+  listContainer: {
+    paddingBottom: 20,
+  },
+  card: {
+    backgroundColor: '#A36717',
+    padding: 16,
+    borderRadius: 8,
+    marginVertical: 8,
+  },
+  beerName: {
+    fontSize: 18,
+    color: '#FFF',
+  },
+  brewery: {
+    color: '#FFF',
+    marginBottom: 8,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  button: {
+    backgroundColor: '#F59A23',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  rateButton: {
+    marginLeft: 8,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
+});
 
 export default BeerList;
