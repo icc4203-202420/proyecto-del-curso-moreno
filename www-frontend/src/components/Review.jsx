@@ -37,6 +37,7 @@ const ReviewForm = ({ route, navigation }) => {
   useEffect(() => {
     const fetchBeerName = async () => {
       try {
+        //id local
         const response = await axios.get(`http://181.43.126.211:3001/api/v1/beers/${id}`);
         dispatch({ type: 'SET_BEER_NAME', payload: response.data.name });
       } catch (error) {
