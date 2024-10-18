@@ -10,7 +10,7 @@ Los requisitos de la primera entrega del proyecto están en el directorio `docs/
 
 Para actualizar el código base del proyecto de acuerdo a los anuncios de los profesores (p.ej., para obtener el enunciado de la segunda entrega y siguientes), deben configurar un origen remoto "upstream" en su repositorio. Vean la sección "Uso del repositorio" más abajo en este mismo documento.
 
-## Modelo de Dominio
+## Modelo de Dominio 
 
 El modelo de dominio de la aplicación que vamos a desarrollar tiene varias entidades y relaciones relevantes:
 
