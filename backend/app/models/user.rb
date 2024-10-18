@@ -29,6 +29,10 @@ class User < ApplicationRecord
   has_many :inverse_friendships, class_name: 'Friendship', foreign_key: 'friend_id'
   has_many :inverse_friends, through: :inverse_friendships, source: :user  
 
+  def self.search_by_handle(handle)
+    where("handle LIKE ?", "%#{handle}%")
+  end
+
   def generate_jwt
     Warden::JWTAuth::UserEncoder.new.call(self, :user, nil)[0]
   end

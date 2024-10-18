@@ -5,6 +5,7 @@ class API::V1::BeersController < ApplicationController
   respond_to :json
   before_action :set_beer, only: [:show, :update, :destroy]
   before_action :verify_jwt_token, only: [:create, :update, :destroy]
+  
 
   # GET /beers
   def index
@@ -21,15 +22,22 @@ class API::V1::BeersController < ApplicationController
   
   # GET /beers/:id
   def show
-    if @beer.image.attached?
-      render json: @beer.as_json.merge({ 
-        image_url: url_for(@beer.image), 
-        thumbnail_url: url_for(@beer.thumbnail)}),
-        status: :ok
-    else
-      render json: { beer: @beer.as_json }, status: :ok
-    end 
+    beer = Beer.includes(brand: { brewery: {} }, bars: {}, reviews: {}).find(params[:id])
+    
+    # Agregar la información de la imagen si está adjunta
+    beer_data = beer.as_json(include: {
+      brand: { include: :brewery },
+      bars: {},
+      reviews: {} # Incluye las evaluaciones en la respuesta
+    }, methods: [:style, :hop, :yeast, :malts, :ibu, :alcohol, :blg, :avg_rating])
+    
+    if beer.image.attached?
+      beer_data.merge!(image_url: url_for(beer.image), thumbnail_url: url_for(beer.thumbnail))
+    end
+  
+    render json: beer_data, status: :ok
   end
+  
 
   # POST /beers
   def create

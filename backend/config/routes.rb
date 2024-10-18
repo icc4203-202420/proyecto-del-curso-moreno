@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   # devise_for :users
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
   get 'current_user', to: 'current_user#index'
+  get 'events', to: 'events#index'
+  
   devise_for :users, path: '', path_names: {
     sign_in: 'api/v1/login',
     sign_out: 'api/v1/logout',
@@ -21,14 +23,39 @@ Rails.application.routes.draw do
 
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
-      resources :bars
-      resources :beers
+      resources :bars, only: [:index, :show, :create, :update, :destroy] do
+        resources :events, only: [:index, :show, :create, :update, :destroy]
+      end
+      
+      resources :beers, only: [:index, :show, :create, :update, :destroy] do
+        resources :reviews, only: [:create]
+      end
+
       resources :users do
         resources :reviews, only: [:index]
+        post 'add_friend', to: 'users#create_friendship', on: :member
+        # no es completamente necesario
+      end
+
+      resources :events do
+        resources :event_pictures, only: [:index, :create]
       end
       
       resources :reviews, only: [:index, :show, :create, :update, :destroy]
+
+      resources :events do
+      member do
+        get 'attendees'
+        get 'event_pictures', to: 'events#event_pictures'
+      end
+
+      resources :friendships, only: [:create] do
+        collection do
+          get 'search'
+        end
+      end
+      
+    end
     end
   end
-
 end
